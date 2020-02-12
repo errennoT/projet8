@@ -33,7 +33,7 @@
                             <a href="{{ path('user_edit', {'id' : user.id}) }}" class="btn btn-success btn-sm">Edit</a>
                         </td>
                         <td>
-                            <form method="POST" action="{{ path('user_delete', {id: user.id}) }}" onsubmit="return confirm('Etes-vous sûr de vouloir supprimer l\'utilisateur ?')">
+                            <form method="POST" action="{{ path('user_delete', {id: user.id}) }}">
                                 <input type="hidden" name="_method" value="DELETE">
                                 <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id )}}">
                                 <button class="btn btn-danger">Supprimer</button>
