@@ -17,7 +17,9 @@
                     <th>#</th>
                     <th>Nom d'utilisateur</th>
                     <th>Adresse d'utilisateur</th>
-                    <th>Actions</th>
+                    <th>Roles</th>
+                    <th>Editer</th>
+                    <th>Supprimer</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -26,8 +28,16 @@
                         <th scope="row">{{ loop.index }}</th>
                         <td>{{ user.username }}</td>
                         <td>{{ user.email }}</td>
+                        <td>{{ user.roles[0] == 'ROLE_ADMIN' ? 'Administrateur' : 'Utilisateur' }}</td>
                         <td>
                             <a href="{{ path('user_edit', {'id' : user.id}) }}" class="btn btn-success btn-sm">Edit</a>
+                        </td>
+                        <td>
+                            <form method="POST" action="{{ path('user_delete', {id: user.id}) }}" onsubmit="return confirm('Etes-vous sûr de vouloir supprimer l\'utilisateur ?')">
+                                <input type="hidden" name="_method" value="DELETE">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id )}}">
+                                <button class="btn btn-danger">Supprimer</button>
+                            </form>
                         </td>
                     </tr>
                 {% endfor %}

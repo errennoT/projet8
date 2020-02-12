@@ -4,8 +4,8 @@
  * Licensed under MIT (https://github.com/BlackrockDigital/startbootstrap/blob/gh-pages/LICENSE)
  */
 
-body {
-    padding-top: 70px; /* Required padding for .navbar-fixed-top. Remove if using .navbar-static-top. Change if height of navigation changes. */
+body{
+    padding-top: 70px;
 }
 
 .slide-image {
@@ -51,6 +51,36 @@ body {
 
 footer {
     margin: 50px 0;
+}
+
+header {
+    text-align: center;
+    color: white;
+    background-image: url("https://via.placeholder.com/650");
+    background-repeat: no-repeat;
+    background-attachment: scroll;
+    background-position: center center;
+    background-size: cover;
+}
+  
+header .intro-text {
+    padding-top: 300px;
+    padding-bottom: 200px;
+}
+  
+header .intro-text .intro-lead-in {
+    font-size: 22px;
+    text-shadow: 1px 2px 3px rgba(0,0,0, 0.5);
+    font-style: italic;
+    line-height: 22px;
+    margin-bottom: 25px;
+}
+  
+header .intro-text .intro-heading {
+    font-size: 50px;
+    font-weight: 700;
+    line-height: 50px;
+    margin-bottom: 25px;
 }
 
 
