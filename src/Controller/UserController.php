@@ -38,6 +38,10 @@ class UserController extends AbstractController
                 )
             );
 
+            $userContent = $request->request->all();
+            $roles = [$userContent['user']['roles']];
+            $user->setRoles($roles);
+
             $em->persist($user);
             $em->flush();
 
