@@ -26,12 +26,22 @@ class Task
     /**
      * @ORM\Column(type="string")
      * @Assert\NotBlank(message="Vous devez saisir un titre.")
+     * @Assert\Length(min=5, 
+     * max=25, 
+     * minMessage="Le titre de la tâche doit contenir au minimun {{ limit }} caractères.",
+     * maxMessage="Le titre de la tâche doit contenir moins de {{ limit }} caractères."
+     * )
      */
     private $title;
 
     /**
      * @ORM\Column(type="text")
-     * @Assert\NotBlank(message="Vous devez saisir du contenu.")
+     * @Assert\NotBlank(message="Vous devez saisir une description.")
+     * @Assert\Length(min=5, 
+     * max=500, 
+     * minMessage="La description de la tâche doit contenir au minimun {{ limit }} caractères.",
+     * maxMessage="La description de la tâche doit contenir moins de {{ limit }} caractères."
+     * )
      */
     private $content;
 
@@ -39,6 +49,11 @@ class Task
      * @ORM\Column(type="boolean")
      */
     private $isDone;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\User", inversedBy="tasks")
+     */
+    private $user;
 
     public function __construct()
     {
@@ -89,5 +104,17 @@ class Task
     public function toggle($flag)
     {
         $this->isDone = $flag;
+    }
+
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    public function setUser(?User $user): self
+    {
+        $this->user = $user;
+
+        return $this;
     }
 }
