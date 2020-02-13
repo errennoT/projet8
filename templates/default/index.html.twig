@@ -27,8 +27,8 @@
         <div class="p-2">
             <div class="card" style="width: 18rem;">
                 <div class="card-body">
-                    <h5 class="card-title">A faire</h5>
-                    <p class="card-text">Voir la liste des tâches à faire</p>
+                    <h5 class="card-title">Tâches</h5>
+                    <p class="card-text">Voir l'ensemble des tâches</p>
                     <a href="{{ path('task_list') }}" class="btn btn-info">Consulter la liste</a>
                 </div>
             </div>
@@ -38,7 +38,7 @@
             <div class="card-body">
                 <h5 class="card-title">Terminé</h5>
                 <p class="card-text">Voir la liste des tâches terminées</p>
-                <a href="#" class="btn btn-secondary">Consulter la liste</a>
+                <a href="{{ path('task_listisdone') }}" class="btn btn-secondary">Consulter la liste</a>
             </div>
         </div>
     </div>
