@@ -4,18 +4,31 @@ namespace App\Controller;
 
 use App\Entity\Task;
 use App\Form\TaskType;
+use App\Repository\TaskRepository;
+use App\Service\SecurityManager;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 
 class TaskController extends AbstractController
 {
+
     /**
      * @Route("/tasks", name="task_list")
      */
-    public function listAction()
+    public function listAction(TaskRepository $taskRepository)
     {
-        return $this->render('task/list.html.twig', ['tasks' => $this->getDoctrine()->getRepository('App:Task')->findAll()]);
+        $tasks = $taskRepository->findAll();
+        return $this->render('task/list.html.twig', ['tasks' => $tasks]);
+    }
+
+    /**
+     * @Route("/tasks/terminee", name="task_listisdone")
+     */
+    public function listIsDone(TaskRepository $taskRepository)
+    {
+        $tasks = $taskRepository->findByisDone();
+        return $this->render('task/listIsDone.html.twig', ['tasks' => $tasks]);
     }
 
     /**
@@ -82,14 +95,22 @@ class TaskController extends AbstractController
     /**
      * @Route("/tasks/{id}/delete", name="task_delete")
      */
-    public function deleteTaskAction(Task $task)
+    public function deleteTaskAction(Task $task, SecurityManager $securityManager, Request $request)
     {
-        $em = $this->getDoctrine()->getManager();
-        $em->remove($task);
-        $em->flush();
+        $previousUrl = $request->headers->get('referer');
 
-        $this->addFlash('success', 'La tâche a bien été supprimée.');
+        if ($securityManager->actionSecurity($task->getUser())) {
+            $em = $this->getDoctrine()->getManager();
+            $em->remove($task);
+            $em->flush();
 
-        return $this->redirectToRoute('task_list');
+            $this->addFlash('success', 'La tâche a bien été supprimée.');
+
+            return $this->redirect($previousUrl, 301);
+        }
+
+        $this->addFlash('error', 'Vous n\'êtes pas l\'auteur de la tâche.');
+
+        return $this->redirect($previousUrl, 301);
     }
 }
