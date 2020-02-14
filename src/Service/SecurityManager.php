@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use App\Entity\User;
 
 class SecurityManager extends AbstractController
 {
@@ -16,5 +17,11 @@ class SecurityManager extends AbstractController
         }
     }
 
+    public function askIfAnonymous(User $username)
+    {
+        if ($username->getUsername() === "anonyme"){
+            return true;
+        }
+    }
 
 }

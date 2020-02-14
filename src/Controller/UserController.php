@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Form\UserType;
+use App\Repository\UserRepository;
+use App\Service\SecurityManager;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,9 +18,10 @@ class UserController extends AbstractController
      * @Route("/users", name="user_list")
      * @IsGranted("ROLE_ADMIN")
      */
-    public function listAction()
+    public function listAction(UserRepository $userRepository)
     {
-        return $this->render('user/list.html.twig', ['users' => $this->getDoctrine()->getRepository('App:User')->findAll()]);
+        $users = $userRepository->findWithoutAnonymous("anonyme");
+        return $this->render('user/list.html.twig', ['users' => $users]);
     }
 
     /**
@@ -42,7 +45,7 @@ class UserController extends AbstractController
             );
 
             $roles = $request->request->get('user')['roles'];
-            $user->setRoles($roles);
+            $user->setRoles([$roles]);
 
             $em->persist($user);
             $em->flush();
@@ -59,10 +62,14 @@ class UserController extends AbstractController
      * @Route("/users/{id}/edit", name="user_edit")
      * @IsGranted("ROLE_ADMIN")
      */
-    public function editAction(User $user, Request $request, UserPasswordEncoderInterface $passwordEncoder)
+    public function editAction(User $user, Request $request, UserPasswordEncoderInterface $passwordEncoder, SecurityManager $securityManager)
     {
-        $form = $this->createForm(UserType::class, $user);
+        if ($securityManager->askIfAnonymous($user)){
+            $this->addFlash('error', "Impossible de modifier cet utilisateur.");
+            return $this->redirectToRoute('user_list');
+        }
 
+        $form = $this->createForm(UserType::class, $user);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -93,15 +100,19 @@ class UserController extends AbstractController
      */
     public function deleteAction(User $user, Request $request)
     {
-        if ($this->isCsrfTokenValid('delete' . $user->getId(), $request->get('_token'))) {
+        if ($this->isCsrfTokenValid('delete' . $user->getId(), $request->get('_token')) && $user->getUsername() !== "anonyme") {
             
             $em = $this->getDoctrine()->getManager();
             $em->remove($user);
             $em->flush();
             
-            $this->addFlash('success', 'Utilisateur supprimé avec succès');
+            $this->addFlash('success', 'Utilisateur supprimé avec succès.');
             
             return $this->redirectToRoute('user_list');
         }
+
+        $this->addFlash('error', 'Impossible de supprimer cet utilisateur.');
+            
+        return $this->redirectToRoute('user_list');
     }
 }

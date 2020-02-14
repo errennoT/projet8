@@ -30,17 +30,6 @@ class TaskRepository extends ServiceEntityRepository
         ;
     }
 
-    public function findByisNotDone()
-    {
-        return $this->createQueryBuilder('t')
-            ->andWhere('t.isDone = :val')
-            ->setParameter('val', false)
-            ->orderBy('t.id', 'ASC')
-            ->getQuery()
-            ->getResult()
-        ;
-    }
-
     // /**
     //  * @return Task[] Returns an array of Task objects
     //  */
