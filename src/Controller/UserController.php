@@ -14,13 +14,21 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 
 class UserController extends AbstractController
 {
+    private $userRepository;
+    private $securityManager;
+
+    public function __construct(UserRepository $userRepository, SecurityManager $securityManager)
+    {
+        $this->userRepository = $userRepository;
+        $this->securityManager = $securityManager;
+    }
     /**
      * @Route("/users", name="user_list")
      * @IsGranted("ROLE_ADMIN")
      */
-    public function listAction(UserRepository $userRepository)
+    public function listAction()
     {
-        $users = $userRepository->findWithoutAnonymous("anonyme");
+        $users = $this->userRepository->findWithoutAnonymous("anonyme");
         return $this->render('user/list.html.twig', ['users' => $users]);
     }
 
@@ -62,9 +70,9 @@ class UserController extends AbstractController
      * @Route("/users/{id}/edit", name="user_edit")
      * @IsGranted("ROLE_ADMIN")
      */
-    public function editAction(User $user, Request $request, UserPasswordEncoderInterface $passwordEncoder, SecurityManager $securityManager)
+    public function editAction(User $user, Request $request, UserPasswordEncoderInterface $passwordEncoder)
     {
-        if ($securityManager->askIfAnonymous($user)){
+        if ($this->securityManager->askIfAnonymous($user)){
             $this->addFlash('error', "Impossible de modifier cet utilisateur.");
             return $this->redirectToRoute('user_list');
         }
@@ -102,6 +110,11 @@ class UserController extends AbstractController
     {
         if ($this->isCsrfTokenValid('delete' . $user->getId(), $request->get('_token')) && $user->getUsername() !== "anonyme") {
             
+            $tasks = $user->getTasks();
+            foreach ($tasks as $task){
+                $task->setUser($this->userRepository->findOneBy(['username' => 'anonyme']));
+            }
+
             $em = $this->getDoctrine()->getManager();
             $em->remove($user);
             $em->flush();

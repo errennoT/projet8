@@ -9,6 +9,7 @@ use App\Service\SecurityManager;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 
 class TaskController extends AbstractController
 {
@@ -33,6 +34,7 @@ class TaskController extends AbstractController
 
     /**
      * @Route("/tasks/create", name="task_create")
+     * @IsGranted("ROLE_USER")
      */
     public function createAction(Request $request)
     {
@@ -61,22 +63,29 @@ class TaskController extends AbstractController
      */
     public function editAction(Task $task, Request $request)
     {
-        $form = $this->createForm(TaskType::class, $task);
+        $previousUrl = $request->headers->get('referer');
 
-        $form->handleRequest($request);
+        if ($this->getUser()->getRoles()['0'] === "ROLE_ADMIN" || $this->getUser() === $task->getUser()) {
+            $form = $this->createForm(TaskType::class, $task);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $this->getDoctrine()->getManager()->flush();
+            $form->handleRequest($request);
 
-            $this->addFlash('success', 'La tâche a bien été modifiée.');
+            if ($form->isSubmitted() && $form->isValid()) {
+                $this->getDoctrine()->getManager()->flush();
 
-            return $this->redirectToRoute('task_list');
+                $this->addFlash('success', 'La tâche a bien été modifiée.');
+
+                return $this->redirectToRoute('task_list');
+            }
+
+            return $this->render('task/edit.html.twig', [
+                'form' => $form->createView(),
+                'task' => $task,
+            ]);
         }
+        $this->addFlash('error', 'Vous n\'êtes pas l\'auteur de la tâche.');
 
-        return $this->render('task/edit.html.twig', [
-            'form' => $form->createView(),
-            'task' => $task,
-        ]);
+        return $this->redirect($previousUrl, 301);
     }
 
     /**
