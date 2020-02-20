@@ -90,7 +90,7 @@ class UserControllerTest extends WebTestCase
 
         $form = $crawler->selectButton('Se connecter')->form();
 
-        $form['username'] = 'administrateur1';
+        $form['username'] = 'administrateur2';
         $form['password'] = 'administrateur';
         $client->submit($form);
 
