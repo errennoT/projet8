@@ -5,7 +5,7 @@ namespace App\Controller;
 use App\Entity\Task;
 use App\Form\TaskType;
 use App\Repository\TaskRepository;
-use App\Service\SecurityManager;
+use App\Service\ActionManager;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -13,22 +13,30 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 
 class TaskController extends AbstractController
 {
+    private $taskRepository;
+    private $actionManager;
+
+    public function __construct(TaskRepository $taskRepository, ActionManager $actionManager)
+    {
+        $this->taskRepository = $taskRepository;
+        $this->actionManager = $actionManager;
+    }
 
     /**
      * @Route("/tasks", name="task_list")
      */
-    public function listAction(TaskRepository $taskRepository)
+    public function listAction()
     {
-        $tasks = $taskRepository->findAll();
+        $tasks = $this->taskRepository->findAll();
         return $this->render('task/list.html.twig', ['tasks' => $tasks]);
     }
 
     /**
      * @Route("/tasks/terminee", name="task_listisdone")
      */
-    public function listIsDone(TaskRepository $taskRepository)
+    public function listIsDone()
     {
-        $tasks = $taskRepository->findByisDone();
+        $tasks = $this->taskRepository->findByisDone();
         return $this->render('task/listIsDone.html.twig', ['tasks' => $tasks]);
     }
 
@@ -66,7 +74,7 @@ class TaskController extends AbstractController
     {
         $previousUrl = $request->headers->get('referer');
 
-        if ($this->getUser()->getRoles()['0'] === "ROLE_ADMIN" || $this->getUser() === $task->getUser()) {
+        if ($this->actionManager->actionSecurity($task->getUser())) {
             $form = $this->createForm(TaskType::class, $task);
 
             $form->handleRequest($request);
@@ -111,11 +119,11 @@ class TaskController extends AbstractController
      * @Route("/tasks/{id}/delete", name="task_delete")
      * @IsGranted("ROLE_USER")
      */
-    public function deleteTaskAction(Task $task, SecurityManager $securityManager, Request $request)
+    public function deleteTaskAction(Task $task, Request $request)
     {
         $previousUrl = $request->headers->get('referer');
 
-        if ($securityManager->actionSecurity($task->getUser())) {
+        if ($this->actionManager->actionSecurity($task->getUser())) {
             $em = $this->getDoctrine()->getManager();
             $em->remove($task);
             $em->flush();
