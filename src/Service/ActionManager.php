@@ -5,7 +5,7 @@ namespace App\Service;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use App\Entity\User;
 
-class SecurityManager extends AbstractController
+class ActionManager extends AbstractController
 {
     public function actionSecurity($author)
     {

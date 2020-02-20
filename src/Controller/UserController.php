@@ -5,7 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Form\UserType;
 use App\Repository\UserRepository;
-use App\Service\SecurityManager;
+use App\Service\ActionManager;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -15,12 +15,12 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 class UserController extends AbstractController
 {
     private $userRepository;
-    private $securityManager;
+    private $actionManager;
 
-    public function __construct(UserRepository $userRepository, SecurityManager $securityManager)
+    public function __construct(UserRepository $userRepository, ActionManager $actionManager)
     {
         $this->userRepository = $userRepository;
-        $this->securityManager = $securityManager;
+        $this->actionManager = $actionManager;
     }
     /**
      * @Route("/users", name="user_list")
@@ -72,7 +72,7 @@ class UserController extends AbstractController
      */
     public function editAction(User $user, Request $request, UserPasswordEncoderInterface $passwordEncoder)
     {
-        if ($this->securityManager->askIfAnonymous($user)){
+        if ($this->actionManager->askIfAnonymous($user)){
             $this->addFlash('error', "Impossible de modifier cet utilisateur.");
             return $this->redirectToRoute('user_list');
         }
