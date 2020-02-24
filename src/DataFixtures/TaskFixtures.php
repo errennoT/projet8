@@ -11,7 +11,7 @@ class TaskFixtures extends Fixture implements DependentFixtureInterface
 {
     public function load(ObjectManager $manager)
     {
-        for ($a = 1; $a <= 10; $a++) {
+        for ($a = 1; $a <= 100; $a++) {
 
             $task = new Task();
             $task->setCreatedAt(new \DateTime);
