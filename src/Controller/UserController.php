@@ -12,16 +12,20 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Knp\Component\Pager\PaginatorInterface;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 
 class UserController extends AbstractController
 {
     private $userRepository;
     private $actionManager;
+    private $cache;
 
-    public function __construct(UserRepository $userRepository, ActionManager $actionManager)
+    public function __construct(UserRepository $userRepository, ActionManager $actionManager, CacheInterface $cache)
     {
         $this->userRepository = $userRepository;
         $this->actionManager = $actionManager;
+        $this->cache = $cache;
     }
     /**
      * @Route("/users", name="user_list")
@@ -29,7 +33,16 @@ class UserController extends AbstractController
      */
     public function listAction(PaginatorInterface $paginator, Request $request)
     {
-        $users = $paginator->paginate($this->userRepository->findWithoutAnonymous("anonyme"), $request->query->getInt('page', 1), 5);
+        $usersInCache = $this->cache->get(
+            'users_in_cache',
+            function (ItemInterface $item) {
+                $item->expiresAfter(86400);
+                $users = $this->userRepository->findWithoutAnonymous("anonyme");
+                return $users;
+            }
+        );
+
+        $users = $paginator->paginate($usersInCache, $request->query->getInt('page', 1), 5);
         return $this->render('user/list.html.twig', ['users' => $users]);
     }
 
@@ -61,6 +74,8 @@ class UserController extends AbstractController
 
             $this->addFlash('success', "L'utilisateur a bien été ajouté.");
 
+            $this->cache->delete('users_in_cache');
+
             return $this->redirectToRoute('user_list');
         }
 
@@ -73,9 +88,11 @@ class UserController extends AbstractController
      */
     public function editAction(User $user, Request $request, UserPasswordEncoderInterface $passwordEncoder)
     {
+        $previousUrl = $request->headers->get('referer');
+
         if ($this->actionManager->askIfAnonymous($user)){
             $this->addFlash('error', "Impossible de modifier cet utilisateur.");
-            return $this->redirectToRoute('user_list');
+            return $this->redirect($previousUrl, 301);
         }
 
         $form = $this->createForm(UserType::class, $user);
@@ -97,7 +114,9 @@ class UserController extends AbstractController
 
             $this->addFlash('success', "L'utilisateur a bien été modifié");
 
-            return $this->redirectToRoute('user_list');
+            $this->cache->delete('users_in_cache');
+
+            return $this->redirect($previousUrl, 301);
         }
 
         return $this->render('user/edit.html.twig', ['form' => $form->createView(), 'user' => $user]);
@@ -109,6 +128,8 @@ class UserController extends AbstractController
      */
     public function deleteAction(User $user, Request $request)
     {
+        $previousUrl = $request->headers->get('referer');
+        
         if ($this->isCsrfTokenValid('delete' . $user->getId(), $request->get('_token')) && $user->getUsername() !== "anonyme") {
             
             $tasks = $user->getTasks();
@@ -121,12 +142,14 @@ class UserController extends AbstractController
             $em->flush();
             
             $this->addFlash('success', 'Utilisateur supprimé avec succès.');
+
+            $this->cache->delete('users_in_cache');
             
-            return $this->redirectToRoute('user_list');
+            return $this->redirect($previousUrl, 301);
         }
 
         $this->addFlash('error', 'Impossible de supprimer cet utilisateur.');
             
-        return $this->redirectToRoute('user_list');
+        return $this->redirect($previousUrl, 301);
     }
 }
