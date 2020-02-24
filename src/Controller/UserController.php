@@ -11,6 +11,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
+use Knp\Component\Pager\PaginatorInterface;
 
 class UserController extends AbstractController
 {
@@ -26,9 +27,9 @@ class UserController extends AbstractController
      * @Route("/users", name="user_list")
      * @IsGranted("ROLE_ADMIN")
      */
-    public function listAction()
+    public function listAction(PaginatorInterface $paginator, Request $request)
     {
-        $users = $this->userRepository->findWithoutAnonymous("anonyme");
+        $users = $paginator->paginate($this->userRepository->findWithoutAnonymous("anonyme"), $request->query->getInt('page', 1), 5);
         return $this->render('user/list.html.twig', ['users' => $users]);
     }
 

@@ -10,6 +10,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
+use Knp\Component\Pager\PaginatorInterface;
 
 class TaskController extends AbstractController
 {
@@ -25,18 +26,18 @@ class TaskController extends AbstractController
     /**
      * @Route("/tasks", name="task_list")
      */
-    public function listAction()
+    public function listAction(PaginatorInterface $paginator, Request $request)
     {
-        $tasks = $this->taskRepository->findAll();
+        $tasks = $paginator->paginate($this->taskRepository->findAll(), $request->query->getInt('page', 1), 9);
         return $this->render('task/list.html.twig', ['tasks' => $tasks]);
     }
 
     /**
      * @Route("/tasks/terminee", name="task_listisdone")
      */
-    public function listIsDone()
+    public function listIsDone(PaginatorInterface $paginator, Request $request)
     {
-        $tasks = $this->taskRepository->findByisDone();
+        $tasks = $paginator->paginate($this->taskRepository->findByisDone(), $request->query->getInt('page', 1), 9);
         return $this->render('task/listIsDone.html.twig', ['tasks' => $tasks]);
     }
 
