@@ -86,6 +86,9 @@ class TaskController extends AbstractController
             $this->cache->delete('tasks_in_cache');
             $this->cache->delete('tasks_done_in_cache');
 
+            $this->cache->delete('tasks_in_cache');
+            $this->cache->delete('tasks_done_in_cache');
+
             return $this->redirectToRoute('task_list');
         }
 
@@ -96,81 +99,100 @@ class TaskController extends AbstractController
      * @Route("/tasks/{id}/edit", name="task_edit")
      * @IsGranted("ROLE_USER")
      */
-    public function editAction(Task $task, Request $request)
+    public function editAction(Task $task = null, Request $request, $id)
     {
-        $previousUrl = $request->headers->get('referer');
+        if ($this->actionManager->isExist($id, "Task")) {
 
-        if ($this->actionManager->actionSecurity($task->getUser())) {
-            $form = $this->createForm(TaskType::class, $task);
+            $previousUrl = $request->headers->get('referer');
 
-            $form->handleRequest($request);
+            if ($this->actionManager->actionSecurity($task->getUser())) {
+                $form = $this->createForm(TaskType::class, $task);
 
-            if ($form->isSubmitted() && $form->isValid()) {
-                $this->getDoctrine()->getManager()->flush();
+                $form->handleRequest($request);
 
-                $this->addFlash('success', 'La tâche a bien été modifiée.');
+                if ($form->isSubmitted() && $form->isValid()) {
+                    $this->getDoctrine()->getManager()->flush();
 
-                $this->cache->delete('tasks_in_cache');
-                $this->cache->delete('tasks_done_in_cache');
+                    $this->addFlash('success', 'La tâche a bien été modifiée.');
 
-                return $this->redirectToRoute('task_list');
+                    $this->cache->delete('tasks_in_cache');
+                    $this->cache->delete('tasks_done_in_cache');
+
+                    return $this->redirectToRoute('task_list');
+                }
+
+                return $this->render('task/edit.html.twig', [
+                    'form' => $form->createView(),
+                    'task' => $task,
+                ]);
+
             }
+            $this->addFlash('error', 'Vous n\'êtes pas l\'auteur de la tâche.');
 
-            return $this->render('task/edit.html.twig', [
-                'form' => $form->createView(),
-                'task' => $task,
-            ]);
+            return $this->redirect($previousUrl, 301);
         }
-        $this->addFlash('error', 'Vous n\'êtes pas l\'auteur de la tâche.');
 
-        return $this->redirect($previousUrl, 301);
+        return $this->render('errors/error.html.twig', ['error' => "La tâche avec l'id $id n'existe pas"]);
     }
 
     /**
      * @Route("/tasks/{id}/toggle", name="task_toggle")
      * @IsGranted("ROLE_USER")
      */
-    public function toggleTaskAction(Task $task, Request $request)
+    public function toggleTaskAction(Task $task = null, Request $request, $id)
     {
-        $previousUrl = $request->headers->get('referer');
+        if ($this->actionManager->isExist($id, "Task")) {
 
-        $task->toggle(!$task->isDone());
-        $this->getDoctrine()->getManager()->flush();
+            $previousUrl = $request->headers->get('referer');
 
-        if ($task->isDone()) {
-            $this->addFlash('success', sprintf('La tâche %s a bien été marquée comme terminée.', $task->getTitle()));
-        } else {
-            $this->addFlash('success', sprintf('La tâche %s a bien été marquée comme non faite.', $task->getTitle()));
-        }
+            $task->toggle(!$task->isDone());
+            $this->getDoctrine()->getManager()->flush();
 
-        $this->cache->delete('tasks_in_cache');
-        $this->cache->delete('tasks_done_in_cache');
-
-        return $this->redirect($previousUrl, 301);
-    }
-
-    /**
-     * @Route("/tasks/{id}/delete", name="task_delete")
-     * @IsGranted("ROLE_USER")
-     */
-    public function deleteTaskAction(Task $task, Request $request)
-    {
-        $previousUrl = $request->headers->get('referer');
-
-        if ($this->actionManager->actionSecurity($task->getUser())) {
-            $em = $this->getDoctrine()->getManager();
-            $em->remove($task);
-            $em->flush();
-
-            $this->addFlash('success', 'La tâche a bien été supprimée.');
+            if ($task->isDone()) {
+                $this->addFlash('success', sprintf('La tâche %s a bien été marquée comme terminée.', $task->getTitle()));
+            } else {
+                $this->addFlash('success', sprintf('La tâche %s a bien été marquée comme non faite.', $task->getTitle()));
+            }
 
             $this->cache->delete('tasks_in_cache');
             $this->cache->delete('tasks_done_in_cache');
 
             return $this->redirect($previousUrl, 301);
         }
-        $this->addFlash('error', 'Vous n\'êtes pas l\'auteur de la tâche.');
 
-        return $this->redirect($previousUrl, 301);
+        return $this->render('errors/error.html.twig', ['error' => "La tâche avec l'id $id n'existe pas"]);
+    }
+
+    /**
+     * @Route("/tasks/{id}/delete", name="task_delete")
+     * @IsGranted("ROLE_USER")
+     */
+    public function deleteTaskAction(Task $task = null, Request $request, $id)
+    {
+        if ($this->actionManager->isExist($id, "Task")) {
+
+            $previousUrl = $request->headers->get('referer');
+
+            if ($this->actionManager->actionSecurity($task->getUser())) {
+                $em = $this->getDoctrine()->getManager();
+                $em->remove($task);
+                $em->flush();
+
+                $this->addFlash('success', 'La tâche a bien été supprimée.');
+
+                $this->cache->delete('tasks_in_cache');
+                $this->cache->delete('tasks_done_in_cache');
+
+                return $this->redirect($previousUrl, 301);
+            }
+            $this->addFlash('error', 'Vous n\'êtes pas l\'auteur de la tâche.');
+
+            $this->cache->delete('tasks_in_cache');
+            $this->cache->delete('tasks_done_in_cache');
+
+            return $this->redirect($previousUrl, 301);
+        }
+
+        return $this->render('errors/error.html.twig', ['error' => "La tâche avec l'id $id n'existe pas"]);
     }
 }

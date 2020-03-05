@@ -59,7 +59,7 @@ class User implements UserInterface
     private $roles;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Task", mappedBy="user")
+     * @ORM\OneToMany(targetEntity="App\Entity\Task", mappedBy="user", cascade={"persist"})
      */
     private $tasks;
 
