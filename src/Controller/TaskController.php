@@ -82,6 +82,9 @@ class TaskController extends AbstractController
             $em->flush();
 
             $this->addFlash('success', 'La tâche a été bien été ajoutée.');
+            
+            $this->cache->delete('tasks_in_cache');
+            $this->cache->delete('tasks_done_in_cache');
 
             $this->cache->delete('tasks_in_cache');
             $this->cache->delete('tasks_done_in_cache');
@@ -122,6 +125,7 @@ class TaskController extends AbstractController
                     'form' => $form->createView(),
                     'task' => $task,
                 ]);
+
             }
             $this->addFlash('error', 'Vous n\'êtes pas l\'auteur de la tâche.');
 
@@ -182,6 +186,9 @@ class TaskController extends AbstractController
                 return $this->redirect($previousUrl, 301);
             }
             $this->addFlash('error', 'Vous n\'êtes pas l\'auteur de la tâche.');
+
+            $this->cache->delete('tasks_in_cache');
+            $this->cache->delete('tasks_done_in_cache');
 
             return $this->redirect($previousUrl, 301);
         }
