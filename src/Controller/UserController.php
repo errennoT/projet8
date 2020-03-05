@@ -75,6 +75,8 @@ class UserController extends AbstractController
             $this->addFlash('success', "L'utilisateur a bien été ajouté.");
 
             $this->cache->delete('users_in_cache');
+            $this->cache->delete('tasks_in_cache');
+            $this->cache->delete('tasks_done_in_cache');
 
             return $this->redirectToRoute('user_list');
         }
@@ -86,70 +88,79 @@ class UserController extends AbstractController
      * @Route("/users/{id}/edit", name="user_edit")
      * @IsGranted("ROLE_ADMIN")
      */
-    public function editAction(User $user, Request $request, UserPasswordEncoderInterface $passwordEncoder)
+    public function editAction(User $user = null, Request $request, UserPasswordEncoderInterface $passwordEncoder, $id)
     {
-        $previousUrl = $request->headers->get('referer');
+        if ($this->actionManager->isExist($id, "User")) {
 
-        if ($this->actionManager->askIfAnonymous($user)){
-            $this->addFlash('error', "Impossible de modifier cet utilisateur.");
-            return $this->redirect($previousUrl, 301);
+            if ($this->actionManager->askIfAnonymous($user)) {
+                $this->addFlash('error', "Impossible de modifier cet utilisateur.");
+                return $this->redirectToRoute('user_list');
+            }
+
+            $form = $this->createForm(UserType::class, $user);
+            $form->handleRequest($request);
+
+            if ($form->isSubmitted() && $form->isValid()) {
+                $em = $this->getDoctrine()->getManager();
+                $user->setPassword(
+                    $passwordEncoder->encodePassword(
+                        $user,
+                        $form->get('password')->getData()
+                    )
+                );
+
+                $roles = $request->request->get('user')['roles'];
+                $user->setRoles([$roles]);
+
+                $em->flush();
+
+                $this->addFlash('success', "L'utilisateur a bien été modifié");
+
+                $this->cache->delete('users_in_cache');
+                $this->cache->delete('tasks_in_cache');
+                $this->cache->delete('tasks_done_in_cache');
+
+                return $this->redirectToRoute('user_list');
+            }
+            return $this->render('user/edit.html.twig', ['form' => $form->createView(), 'user' => $user]);
         }
-
-        $form = $this->createForm(UserType::class, $user);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $em = $this->getDoctrine()->getManager();
-            $user->setPassword(
-                $passwordEncoder->encodePassword(
-                    $user,
-                    $form->get('password')->getData()
-                )
-            );
-
-            $roles = $request->request->get('user')['roles'];
-            $user->setRoles([$roles]);
-
-            $em->flush();
-
-            $this->addFlash('success', "L'utilisateur a bien été modifié");
-
-            $this->cache->delete('users_in_cache');
-
-            return $this->redirect($previousUrl, 301);
-        }
-
-        return $this->render('user/edit.html.twig', ['form' => $form->createView(), 'user' => $user]);
+        return $this->render('errors/error.html.twig', ['error' => "L'utilisateur avec l'id $id n'existe pas"]);
     }
 
     /**
      * @Route("/users/{id}/delete", name="user_delete")
      * @IsGranted("ROLE_ADMIN")
      */
-    public function deleteAction(User $user, Request $request)
+    public function deleteAction(User $user = null, Request $request, $id)
     {
-        $previousUrl = $request->headers->get('referer');
-        
-        if ($this->isCsrfTokenValid('delete' . $user->getId(), $request->get('_token')) && $user->getUsername() !== "anonyme") {
-            
-            $tasks = $user->getTasks();
-            foreach ($tasks as $task){
-                $task->setUser($this->userRepository->findOneBy(['username' => 'anonyme']));
+        if ($this->actionManager->isExist($id, "User")) {
+
+            $previousUrl = $request->headers->get('referer');
+
+            if ($this->isCsrfTokenValid('delete' . $user->getId(), $request->get('_token')) && $user->getUsername() !== "anonyme") {
+
+                $tasks = $user->getTasks();
+                foreach ($tasks as $task) {
+                    $task->setUser($this->userRepository->findOneBy(['username' => 'anonyme']));
+                }
+
+                $em = $this->getDoctrine()->getManager();
+                $em->remove($user);
+                $em->flush();
+
+                $this->addFlash('success', 'Utilisateur supprimé avec succès.');
+
+                $this->cache->delete('users_in_cache');
+                $this->cache->delete('tasks_in_cache');
+                $this->cache->delete('tasks_done_in_cache');
+
+                return $this->redirect($previousUrl, 301);
             }
 
-            $em = $this->getDoctrine()->getManager();
-            $em->remove($user);
-            $em->flush();
-            
-            $this->addFlash('success', 'Utilisateur supprimé avec succès.');
+            $this->addFlash('error', 'Impossible de supprimer cet utilisateur.');
 
-            $this->cache->delete('users_in_cache');
-            
-            return $this->redirect($previousUrl, 301);
+            return $this->redirectToRoute('user_list');
         }
-
-        $this->addFlash('error', 'Impossible de supprimer cet utilisateur.');
-            
-        return $this->redirect($previousUrl, 301);
+        return $this->render('errors/error.html.twig', ['error' => "L'utilisateur avec l'id $id n'existe pas"]);
     }
 }

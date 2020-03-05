@@ -4,6 +4,7 @@ namespace App\Service;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use App\Entity\User;
+use App\Entity\Task;
 
 class ActionManager extends AbstractController
 {
@@ -22,6 +23,12 @@ class ActionManager extends AbstractController
         if ($username->getUsername() === "anonyme"){
             return true;
         }
+    }
+
+    public function isExist(int $id, $repository)
+    {
+        $object = $this->getDoctrine()->getRepository('App:'.$repository)->findOneBy(["id" => $id]);
+        return $object;
     }
 
 }

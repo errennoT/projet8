@@ -50,7 +50,7 @@ class Task
     private $isDone;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\User", inversedBy="tasks")
+     * @ORM\ManyToOne(targetEntity="App\Entity\User", inversedBy="tasks", fetch="EAGER")
      */
     private $user;
 
