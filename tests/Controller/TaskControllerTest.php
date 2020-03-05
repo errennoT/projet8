@@ -16,7 +16,7 @@ class TaskControllerTest extends WebTestCase
     public function testListIsDone()
     {
         $client = static::createClient();
-        $client->request('GET', '/tasks/terminee');
+        $client->request('GET', '/tasks/done');
         $this->assertEquals(200, $client->getResponse()->getStatusCode());
     }
 
@@ -61,7 +61,7 @@ class TaskControllerTest extends WebTestCase
 
         $crawler = $client->request('GET', '/tasks');
 
-        $link = $crawler->selectLink('Task n° 10')->link();
+        $link = $crawler->selectLink('Task n° 2')->link();
         $crawler = $client->click($link);
 
         $form = $crawler->selectButton('Modifier')->form();
